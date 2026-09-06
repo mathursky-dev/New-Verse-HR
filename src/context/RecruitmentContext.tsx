@@ -158,28 +158,45 @@ interface RecruitmentContextType {
 const RecruitmentContext = createContext<RecruitmentContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  CANDIDATES: 'esl_crm_candidates_v1',
-  FOLLOW_UPS: 'esl_crm_follow_ups_v1',
-  INTERVIEWS: 'esl_crm_interviews_v1',
-  JOB_OPENINGS: 'esl_crm_jobs_v1',
-  SETTINGS: 'esl_crm_settings_v1',
-  AD_SPENDS: 'esl_crm_ad_spends_v1',
-  AUDIT_LOGS: 'esl_crm_audit_logs_v1',
-  DAILY_REPORTS: 'esl_crm_daily_reports_v1',
-  CURRENT_USER: 'esl_crm_current_user_v1',
-  USERS: 'esl_crm_users_v2',
-  COMPANIES: 'esl_crm_companies_v2',
-  ACTIVE_COMPANY: 'esl_crm_active_company_v2',
-  DEPARTMENTS: 'esl_crm_departments_v2',
-  TARGETS: 'esl_crm_targets_v2',
-  THEME: 'esl_crm_theme_v2',
-  ROLE_PERMISSIONS: 'esl_crm_role_permissions_v2',
-  TERMS_CLAUSES: 'esl_crm_terms_clauses_v2',
-  OFFER_LETTERS: 'esl_crm_offer_letters_v2',
-  IS_AUTHENTICATED: 'esl_crm_auth_status_v1',
+  CANDIDATES: 'esl_crm_candidates_v4',
+  FOLLOW_UPS: 'esl_crm_follow_ups_v4',
+  INTERVIEWS: 'esl_crm_interviews_v4',
+  JOB_OPENINGS: 'esl_crm_jobs_v4',
+  SETTINGS: 'esl_crm_settings_v4',
+  AD_SPENDS: 'esl_crm_ad_spends_v4',
+  AUDIT_LOGS: 'esl_crm_audit_logs_v4',
+  DAILY_REPORTS: 'esl_crm_daily_reports_v4',
+  CURRENT_USER: 'esl_crm_current_user_v4',
+  USERS: 'esl_crm_users_v4',
+  COMPANIES: 'esl_crm_companies_v4',
+  ACTIVE_COMPANY: 'esl_crm_active_company_v4',
+  DEPARTMENTS: 'esl_crm_departments_v4',
+  TARGETS: 'esl_crm_targets_v4',
+  THEME: 'esl_crm_theme_v4',
+  ROLE_PERMISSIONS: 'esl_crm_role_permissions_v4',
+  TERMS_CLAUSES: 'esl_crm_terms_clauses_v4',
+  OFFER_LETTERS: 'esl_crm_offer_letters_v4',
+  IS_AUTHENTICATED: 'esl_crm_auth_status_v4',
 };
 
 export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // One-time cleanup for old version candidate keys to prevent stale demo candidates
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        ['esl_crm_candidates_v1', 'esl_crm_candidates_v2', 'esl_crm_candidates_v3',
+         'esl_crm_follow_ups_v1', 'esl_crm_follow_ups_v2', 'esl_crm_follow_ups_v3',
+         'esl_crm_interviews_v1', 'esl_crm_interviews_v2', 'esl_crm_interviews_v3',
+         'esl_crm_offer_letters_v1', 'esl_crm_offer_letters_v2', 'esl_crm_offer_letters_v3',
+         'esl_crm_audit_logs_v1', 'esl_crm_audit_logs_v2', 'esl_crm_audit_logs_v3'].forEach(k => {
+          localStorage.removeItem(k);
+        });
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   // Theme state
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.THEME);
@@ -453,7 +470,15 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const deleteCompany = (id: string) => {
-    setCompanies(prev => prev.filter(c => c.id !== id));
+    setCompanies(prev => {
+      const updated = prev.filter(c => c.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEYS.COMPANIES, JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Could not persist deleted company:', e);
+      }
+      return updated;
+    });
     if (activeCompanyId === id) {
       setActiveCompanyId('ALL');
     }
@@ -1247,23 +1272,21 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Reset demo
   const resetAllData = () => {
-    localStorage.removeItem(STORAGE_KEYS.CANDIDATES);
-    localStorage.removeItem(STORAGE_KEYS.FOLLOW_UPS);
-    localStorage.removeItem(STORAGE_KEYS.INTERVIEWS);
-    localStorage.removeItem(STORAGE_KEYS.JOB_OPENINGS);
-    localStorage.removeItem(STORAGE_KEYS.SETTINGS);
-    localStorage.removeItem(STORAGE_KEYS.AD_SPENDS);
-    localStorage.removeItem(STORAGE_KEYS.AUDIT_LOGS);
-    localStorage.removeItem(STORAGE_KEYS.DAILY_REPORTS);
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-    localStorage.removeItem(STORAGE_KEYS.USERS);
-    localStorage.removeItem(STORAGE_KEYS.COMPANIES);
-    localStorage.removeItem(STORAGE_KEYS.ACTIVE_COMPANY);
-    localStorage.removeItem(STORAGE_KEYS.DEPARTMENTS);
-    localStorage.removeItem(STORAGE_KEYS.TARGETS);
-    localStorage.removeItem(STORAGE_KEYS.ROLE_PERMISSIONS);
-    localStorage.removeItem(STORAGE_KEYS.TERMS_CLAUSES);
-    localStorage.removeItem(STORAGE_KEYS.OFFER_LETTERS);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        // Clear all defined storage keys
+        Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
+        // Also clear any legacy or versioned esl CRM keys
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('esl_crm_') || key.startsWith('esl_'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error clearing localStorage during reset:', e);
+    }
 
     setCandidates(INITIAL_CANDIDATES);
     setFollowUps(INITIAL_FOLLOW_UPS);

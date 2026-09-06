@@ -32,7 +32,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({
 
   const callsToday = followUps.filter(
     (f) => f.followUpDate === TODAY && (f.followUpMode === 'Call' || f.isCompleted)
-  ).length + 42; // Real-world simulation baseline
+  ).length + filteredCandidates.filter((c) => c.firstCallDate?.startsWith(TODAY)).length;
 
   const connectedToday = filteredCandidates.filter(
     (c) => c.status === 'Connected' || c.status === 'Interested'
@@ -40,29 +40,29 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({
 
   const followUpsToday = followUps.filter((f) => f.followUpDate === TODAY).length;
 
-  const interviewsToday = interviews.filter((i) => i.interviewDate === TODAY).length || 14;
+  const interviewsToday = interviews.filter((i) => i.interviewDate === TODAY).length;
 
   const interviewsConductedToday = interviews.filter(
     (i) => i.interviewDate === TODAY && i.attendanceStatus === 'Conducted'
-  ).length || 4;
+  ).length;
 
   const selectedToday = filteredCandidates.filter(
     (c) => c.status === 'Selected' || c.selectionDate?.startsWith(TODAY)
-  ).length || 8;
+  ).length;
 
   const joiningToday = filteredCandidates.filter(
     (c) => c.status === 'Joined' || c.joiningDate?.startsWith(TODAY)
-  ).length || 5;
+  ).length;
 
-  const activeJoining = filteredCandidates.filter((c) => c.isActiveJoining).length || 3;
+  const activeJoining = filteredCandidates.filter((c) => c.isActiveJoining).length;
 
   const overdueFollowUps = followUps.filter(
     (f) => !f.isCompleted && f.followUpDate < TODAY
-  ).length || 6;
+  ).length;
 
   const untouchedCount = filteredCandidates.filter(
     (c) => c.status === 'New Lead' || c.status === 'Not Contacted'
-  ).length || 15;
+  ).length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -97,7 +97,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({
           className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:border-slate-300 transition-all"
         >
           <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">New Leads</div>
-          <div className="text-xl font-bold text-slate-900">{newLeadsToday || 42}</div>
+          <div className="text-xl font-bold text-slate-900">{newLeadsToday}</div>
         </div>
 
         <div 
@@ -105,7 +105,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({
           className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:border-slate-300 transition-all"
         >
           <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Calls Made</div>
-          <div className="text-xl font-bold text-slate-900">{callsToday || 128}</div>
+          <div className="text-xl font-bold text-slate-900">{callsToday}</div>
         </div>
 
         <div 

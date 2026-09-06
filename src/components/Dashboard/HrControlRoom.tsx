@@ -59,12 +59,12 @@ export const HrControlRoom: React.FC<HrControlRoomProps> = ({ onFilterDept }) =>
 
     return {
       ...hr,
-      leads: leads || (hr.name === 'Nandani' ? 24 : 18),
-      calls: Math.max(calls, hr.name === 'Nandani' ? 38 : 22),
-      callsPending: false,
+      leads,
+      calls,
+      callsPending: calls === 0,
       interviewsConducted,
-      selected: selected || (hr.name === 'Nandani' ? 3 : 1),
-      joined: joined || (hr.name === 'Nandani' ? 2 : 1),
+      selected,
+      joined,
       achievementBadge,
       badgeColor,
     };

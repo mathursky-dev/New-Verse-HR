@@ -4,25 +4,25 @@ import { useRecruitment } from '../../context/RecruitmentContext';
 export const RecruitmentFunnel: React.FC = () => {
   const { candidates } = useRecruitment();
 
-  const totalLeads = candidates.length || 420;
+  const totalLeads = candidates.length;
   const contacted = candidates.filter(
     (c) => c.status !== 'New Lead' && c.status !== 'Not Contacted'
-  ).length || 215;
+  ).length;
   
   const interviews = candidates.filter((c) =>
     ['Interview Scheduled', 'Interview Confirmed', 'Interview Conducted', 'Selected', 'Joined', 'Active Joining'].includes(c.status)
-  ).length || 84;
+  ).length;
 
   const selected = candidates.filter((c) =>
     ['Selected', 'Joined', 'Active Joining'].includes(c.status)
-  ).length || 28;
+  ).length;
 
-  const active = candidates.filter((c) => c.isActiveJoining || c.status === 'Active Joining').length || 12;
+  const active = candidates.filter((c) => c.isActiveJoining || c.status === 'Active Joining').length;
 
   // Conversion rates
-  const leadToInterview = Math.round((interviews / Math.max(1, totalLeads)) * 100);
-  const selectionRate = Math.round((selected / Math.max(1, interviews)) * 100);
-  const retention = Math.round((active / Math.max(1, selected)) * 100);
+  const leadToInterview = totalLeads > 0 ? Math.round((interviews / totalLeads) * 100) : 0;
+  const selectionRate = interviews > 0 ? Math.round((selected / interviews) * 100) : 0;
+  const retention = selected > 0 ? Math.round((active / selected) * 100) : 0;
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4">

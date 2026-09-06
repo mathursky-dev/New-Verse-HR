@@ -50,6 +50,8 @@ export const CompanyMaster: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCredentialsMasterOpen, setIsCredentialsMasterOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [notificationToast, setNotificationToast] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
 
   // Card Credentials helper states
   const [visibleCardPasswords, setVisibleCardPasswords] = useState<Record<string, boolean>>({});
@@ -226,13 +228,23 @@ export const CompanyMaster: React.FC = () => {
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (companies.length <= 1) {
-      alert('At least one company must remain in the master registry.');
-      return;
-    }
-    if (confirm(`Are you sure you want to remove ${name} from the Company Master?`)) {
-      deleteCompany(id);
-    }
+    const targetComp = companies.find(c => c.id === id) || ({ id, name, code: 'N/A' } as Company);
+    setCompanyToDelete(targetComp);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!companyToDelete) return;
+    const targetName = companyToDelete.name;
+    const targetId = companyToDelete.id;
+    deleteCompany(targetId);
+    setCompanyToDelete(null);
+    setNotificationToast({
+      type: 'success',
+      message: `Company "${targetName}" was removed from the registry successfully.`,
+    });
+    setTimeout(() => {
+      setNotificationToast(null);
+    }, 4500);
   };
 
   // Switch / simulate login as Company Admin
@@ -312,6 +324,23 @@ export const CompanyMaster: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Notification Toast */}
+      {notificationToast && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-xs font-medium flex items-center justify-between shadow-xs animate-in fade-in duration-150">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{notificationToast.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNotificationToast(null)}
+            className="text-emerald-700 hover:text-emerald-900 p-1 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* KPI Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -484,16 +513,20 @@ export const CompanyMaster: React.FC = () => {
 
                   <div className="flex items-center space-x-1">
                     <button
+                      id={`btn-edit-company-${comp.id}`}
+                      type="button"
                       onClick={() => handleOpenEdit(comp)}
                       title="Edit Company"
-                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button
+                      id={`btn-delete-company-${comp.id}`}
+                      type="button"
                       onClick={() => handleDelete(comp.id, comp.name)}
                       title="Delete Company"
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -737,16 +770,26 @@ export const CompanyMaster: React.FC = () => {
                     <td className="py-2.5 px-3 text-right">
                       <div className="inline-flex items-center gap-1.5">
                         <button
+                          type="button"
                           onClick={() => handleOpenEdit(comp)}
                           className="px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
                         >
                           Edit Credentials
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleLoginAsCompanyAdmin(comp)}
                           className="px-2.5 py-1 text-xs font-semibold bg-amber-50 text-amber-700 hover:bg-amber-100 rounded transition-colors cursor-pointer"
                         >
                           Login as Entity
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(comp.id, comp.name)}
+                          title="Delete Company"
+                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
@@ -1086,20 +1129,40 @@ export const CompanyMaster: React.FC = () => {
               </div>
 
               {/* Submit Buttons */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold text-white shadow-xs"
-                >
-                  {editingCompany ? 'Save Changes' : 'Create Company'}
-                </button>
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                {editingCompany ? (
+                  <button
+                    id="btn-edit-modal-delete-company"
+                    type="button"
+                    onClick={() => {
+                      const comp = editingCompany;
+                      setIsAddModalOpen(false);
+                      handleDelete(comp.id, comp.name);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Company</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-600 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold text-white shadow-xs cursor-pointer"
+                  >
+                    {editingCompany ? 'Save Changes' : 'Create Company'}
+                  </button>
+                </div>
               </div>
             </form>
 
@@ -1110,6 +1173,81 @@ export const CompanyMaster: React.FC = () => {
       {/* Standalone Company User ID & Password Master Modal */}
       {isCredentialsMasterOpen && (
         <CompanyCredentialsMasterModal onClose={() => setIsCredentialsMasterOpen(false)} />
+      )}
+
+      {/* In-App Delete Company Confirmation Dialog */}
+      {companyToDelete && (
+        <div 
+          id="modal-delete-company-backdrop"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+        >
+          <div 
+            id="modal-delete-company-container"
+            className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-200"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="p-3 rounded-full bg-rose-100 text-rose-600 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-slate-900">
+                  Delete Company Entity
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Are you sure you want to remove <span className="font-semibold text-slate-900">{companyToDelete.name}</span> from the Company Master registry?
+                </p>
+
+                <div className="mt-3.5 p-3 bg-slate-50 rounded-lg border border-slate-200/80 text-xs space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Entity Code:</span>
+                    <span className="font-bold text-blue-700">{companyToDelete.code}</span>
+                  </div>
+                  {companyToDelete.adminUserId && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Admin User ID:</span>
+                      <span className="font-mono font-medium text-slate-700">{companyToDelete.adminUserId}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Linked Departments:</span>
+                    <span className="font-semibold text-slate-700">
+                      {departmentsList.filter(d => d.companyId === companyToDelete.id).length} department(s)
+                    </span>
+                  </div>
+                </div>
+
+                {companies.length <= 1 && (
+                  <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-[11px] text-amber-800">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                    <span>
+                      Notice: This is the last registered company. If deleted, the registry will be empty until you add another entity.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+              <button
+                id="btn-cancel-delete-company"
+                type="button"
+                onClick={() => setCompanyToDelete(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                id="btn-confirm-delete-company"
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirm Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

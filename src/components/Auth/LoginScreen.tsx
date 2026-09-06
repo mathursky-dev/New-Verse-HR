@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle, KeyRound, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle, KeyRound, ChevronDown, ChevronUp, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 
 export const LoginScreen: React.FC = () => {
-  const { loginWithCredentials, companies, allUsers } = useRecruitment();
+  const { loginWithCredentials, companies, allUsers, resetAllData } = useRecruitment();
 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -12,9 +12,19 @@ export const LoginScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
+  const [resetSuccessMsg, setResetSuccessMsg] = useState('');
 
   // Primary company info for branding
   const companyName = companies[0]?.name || 'Essential Soul Lifestyle';
+
+  const handleResetDemoData = () => {
+    resetAllData();
+    setUserId('');
+    setPassword('');
+    setErrorMsg('');
+    setResetSuccessMsg('All demo data has been reset to factory defaults.');
+    setTimeout(() => setResetSuccessMsg(''), 4000);
+  };
 
   const handleSelectDemo = (uId: string, pwd: string) => {
     setUserId(uId);
@@ -78,6 +88,18 @@ export const LoginScreen: React.FC = () => {
             >
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
               <span>{errorMsg}</span>
+            </motion.div>
+          )}
+
+          {resetSuccessMsg && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+              <span>{resetSuccessMsg}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -220,6 +242,20 @@ export const LoginScreen: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Direct Reset Dummy Data Option */}
+          <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-center">
+            <button
+              id="btn-login-reset-dummy-data"
+              type="button"
+              onClick={handleResetDemoData}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-500 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/30 transition-colors cursor-pointer"
+              title="Reset all CRM records (candidates, jobs, users, companies) back to factory default"
+            >
+              <RotateCcw className="w-3 h-3 text-amber-500" />
+              <span>Reset Dummy Data to Factory Defaults</span>
+            </button>
+          </div>
         </div>
 
       </motion.div>
